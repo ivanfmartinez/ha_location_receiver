@@ -1,0 +1,119 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Location Receiver Device",
+        "description": "Configure a new GPS tracker device.",
+        "data": {
+          "name": "Device Name",
+          "device_type": "Device Type"
+        },
+        "data_description": {
+          "device_type": "OsmAnd/Traccar uses GET or POST requests. CarStatsViewer uses POST JSON."
+        }
+      },
+      "osmand_mode": {
+        "title": "OsmAnd Webhook Mode",
+        "description": "**Individual webhook** — a dedicated URL for this device only.\n\n**Global webhook** — one shared URL for all OsmAnd/Traccar devices. Devices are identified by the `device_id` they send. The global webhook URL is configured once for the entire integration and reused by every device that chooses this mode.",
+        "data": {
+          "osmand_mode": "Webhook mode",
+          "bound_device_id": "Device ID (global mode only)"
+        },
+        "data_description": {
+          "bound_device_id": "Required for Global mode. Must match the `id` / `device_id` sent by your tracker."
+        }
+      },
+      "global_webhook": {
+        "title": "Configure Global OsmAnd Webhook",
+        "description": "**This webhook will be shared by all devices using Global mode.**\n\nBy default a cryptographically secure random ID is generated — strongly recommended. You may define a custom ID if your client requires a fixed URL.\n\n⚠️ **A short or predictable ID reduces security.** The webhook ID is the only secret protecting your endpoint.\n\nCustom IDs must be at least {min_length} characters — letters, numbers, hyphens and underscores only.",
+        "data": {
+          "webhook_manual": "Define webhook ID manually",
+          "custom_webhook_id": "Custom Webhook ID"
+        },
+        "data_description": {
+          "webhook_manual": "Leave unchecked to generate a secure random ID (recommended).",
+          "custom_webhook_id": "Only applies when manual mode is enabled above."
+        }
+      },
+      "global_webhook_existing": {
+        "title": "Global OsmAnd Webhook — Already Configured",
+        "description": "A global OsmAnd webhook is already active for this integration:\n\n```\n{webhook_url}\n```\nID: `{global_webhook_id}`\n\nThis device will share that webhook URL. Click **Submit** to confirm.",
+        "data": {}
+      },
+      "webhook": {
+        "title": "Webhook ID",
+        "description": "By default a cryptographically secure random ID is generated — strongly recommended.\n\nYou may define a custom ID if your client requires a fixed URL.\n\n⚠️ **A short or predictable ID reduces security.** The webhook ID is the only secret protecting your endpoint.\n\nCustom IDs must be at least {min_length} characters — letters, numbers, hyphens and underscores only.",
+        "data": {
+          "webhook_manual": "Define webhook ID manually",
+          "custom_webhook_id": "Custom Webhook ID"
+        },
+        "data_description": {
+          "webhook_manual": "Leave unchecked to generate a secure random ID (recommended).",
+          "custom_webhook_id": "Only applies when manual mode is enabled above."
+        }
+      }
+    },
+    "error": {
+      "name_exists": "A device with this name already exists.",
+      "bound_device_id_required": "A device ID is required when using Global webhook mode.",
+      "webhook_too_short": "Webhook ID must be at least {min_length} characters.",
+      "webhook_invalid_chars": "Webhook ID may only contain letters (A–Z, a–z), numbers, hyphens and underscores.",
+      "webhook_already_used": "This webhook ID is already in use by another device."
+    },
+    "abort": {
+      "already_configured": "Device is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reconfigure Location Receiver",
+        "description": "**{webhook_label}**\n\n```\n{webhook_url}\n```\nID: `{active_webhook_id}` ({webhook_type})\n\nDevice type: {device_type} | OsmAnd mode: {osmand_mode} | Bound device ID: {bound_device_id}\n\nSelect what you want to change:",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "global_webhook": {
+        "title": "Change Global OsmAnd Webhook",
+        "description": "⚠️ **This change affects all devices using the global webhook.**\n\n**Current URL:**\n```\n{current_webhook_url}\n```\nCurrent ID: `{current_webhook_id}`\n\nGenerating a new ID will invalidate the current URL — you must update the server URL in all tracker apps.\n\nCustom IDs must be at least {min_length} characters — letters, numbers, hyphens and underscores only.",
+        "data": {
+          "webhook_manual": "Define webhook ID manually",
+          "custom_webhook_id": "New Custom Webhook ID"
+        },
+        "data_description": {
+          "webhook_manual": "Leave unchecked to generate a new secure random ID.",
+          "custom_webhook_id": "Only applies when manual mode is enabled above."
+        }
+      },
+      "osmand_mode": {
+        "title": "Change OsmAnd Mode / Bound Device",
+        "description": "**Active webhook URL:**\n```\n{webhook_url}\n```\nID: `{active_webhook_id}`\n\nUpdate the OsmAnd mode and/or the device ID bound to this entry.",
+        "data": {
+          "osmand_mode": "Webhook mode",
+          "bound_device_id": "Device ID (global mode only)"
+        },
+        "data_description": {
+          "bound_device_id": "Required for Global mode. Must match the `id` / `device_id` sent by your tracker."
+        }
+      },
+      "webhook": {
+        "title": "Change Webhook ID",
+        "description": "**Current webhook URL:**\n```\n{current_webhook_url}\n```\nCurrent ID: `{current_webhook_id}`\n\nGenerating a new ID will invalidate the current URL — you must update the server URL in your tracker app.\n\nCustom IDs must be at least {min_length} characters — letters, numbers, hyphens and underscores only.\n\n⚠️ **Manual IDs are less secure than auto-generated ones.**",
+        "data": {
+          "webhook_manual": "Define webhook ID manually",
+          "custom_webhook_id": "New Webhook ID"
+        },
+        "data_description": {
+          "webhook_manual": "Leave unchecked to generate a new secure random ID.",
+          "custom_webhook_id": "Only applies when manual mode is enabled above."
+        }
+      }
+    },
+    "error": {
+      "bound_device_id_required": "A device ID is required when using Global webhook mode.",
+      "webhook_too_short": "Webhook ID must be at least {min_length} characters.",
+      "webhook_invalid_chars": "Webhook ID may only contain letters (A–Z, a–z), numbers, hyphens and underscores.",
+      "webhook_already_used": "This webhook ID is already in use by another device."
+    }
+  }
+}
