@@ -1,7 +1,9 @@
 {
   "domain": "ha_location_receiver",
   "name": "Location Receiver",
-  "codeowners": [ "@ivanfmartinez" ],
+  "codeowners": [
+    "@ivanfmartinez"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/ivanfmartinez/ha_location_receiver",
