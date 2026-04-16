@@ -1,7 +1,7 @@
 {
   "domain": "ha_location_receiver",
   "name": "Location Receiver",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "documentation": "https://github.com/ivanfmartinez/ha_location_receiver",
   "issue_tracker": "https://github.com/ivanfmartinez/ha_location_receiver/issues",
   "dependencies": [],

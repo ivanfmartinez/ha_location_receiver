@@ -6,8 +6,8 @@
 [![Validate](https://github.com/ivanfmartinez/ha_location_receiver/actions/workflows/validate.yml/badge.svg)](https://github.com/ivanfmartinez/ha_location_receiver/actions/workflows/validate.yml)
 
 > **ℹ️ AI-generated code**
-> This integration was fully generated using [Claude](https://claude.ai) by Anthropic.
-> Human review and testing are recommended before use in production.
+> This integration had first version fully generated using [Claude](https://claude.ai) by Anthropic.
+> After that human changes are made
 
 Custom Home Assistant integration for receiving real-time GPS location data from mobile devices and vehicle trackers via webhooks.
 
