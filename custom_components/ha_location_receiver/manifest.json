@@ -1,13 +1,13 @@
 {
   "domain": "ha_location_receiver",
   "name": "Location Receiver",
-  "version": "0.1.1",
-  "documentation": "https://github.com/ivanfmartinez/ha_location_receiver",
-  "issue_tracker": "https://github.com/ivanfmartinez/ha_location_receiver/issues",
-  "dependencies": [],
-  "codeowners": [],
-  "requirements": [],
+  "codeowners": [ "@ivanfmartinez" ],
   "config_flow": true,
-  "integration_type": "device",
-  "iot_class": "local_push"
+  "dependencies": [],
+  "documentation": "https://github.com/ivanfmartinez/ha_location_receiver",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/ivanfmartinez/ha_location_receiver/issues",
+  "requirements": [],
+  "version": "0.1.1"
 }
