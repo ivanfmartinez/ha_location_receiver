@@ -12,8 +12,8 @@ from homeassistant.core import HomeAssistant
 
 from .const import (
     ATTR_DEVICE_ID,
-    ATTR_DEVICE_TIMESTAMP,
-    ATTR_OSMAND_FORMAT,
+    ATTR_FORMAT,
+    ENTITY_DEVICE_TIMESTAMP,
     ATTR_WEBHOOK_RECEIVED_AT,
     CONF_BOUND_DEVICE_ID,
     CONF_DEVICE_TYPE,
@@ -98,6 +98,7 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER_WEBHOOK = logging.getLogger(f"{__name__}.webhook")
 
 PLATFORMS: list[Platform] = [
     Platform.DEVICE_TRACKER,
@@ -358,7 +359,7 @@ async def _osmand_global_webhook_handler(
     hass: HomeAssistant, webhook_id: str, request
 ) -> None:
     """Receive OsmAnd data on the shared global webhook and route by device_id."""
-    _LOGGER.debug(
+    _LOGGER_WEBHOOK.debug(
         "Location Receiver: global OsmAnd webhook received — method=%s content_type=%s",
         request.method,
         request.content_type,
@@ -367,11 +368,11 @@ async def _osmand_global_webhook_handler(
     if data is None:
         return
 
-    _LOGGER.debug(
+    _LOGGER_WEBHOOK.debug(
         "Location Receiver: global OsmAnd parsed — device_id=%s format=%s "
         "lat=%s lon=%s battery=%s",
         data.get(ATTR_DEVICE_ID),
-        data.get(ATTR_OSMAND_FORMAT),
+        data.get(ATTR_FORMAT),
         data.get(ENTITY_LATITUDE),
         data.get(ENTITY_LONGITUDE),
         data.get(ENTITY_BATTERY_LEVEL),
@@ -443,7 +444,7 @@ def _make_osmand_individual_handler(entry_id: str):
     """OsmAnd handler for a dedicated per-device webhook."""
 
     async def handler(hass: HomeAssistant, webhook_id: str, request):
-        _LOGGER.debug(
+        _LOGGER_WEBHOOK.debug(
             "Location Receiver [%s]: OsmAnd individual webhook received — "
             "method=%s content_type=%s",
             entry_id,
@@ -453,12 +454,12 @@ def _make_osmand_individual_handler(entry_id: str):
         data = await _read_osmand_request(request)
         if data is None:
             return
-        _LOGGER.debug(
+        _LOGGER_WEBHOOK.debug(
             "Location Receiver [%s]: OsmAnd individual parsed — device_id=%s "
             "format=%s lat=%s lon=%s battery=%s",
             entry_id,
             data.get(ATTR_DEVICE_ID),
-            data.get(ATTR_OSMAND_FORMAT),
+            data.get(ATTR_FORMAT),
             data.get(ENTITY_LATITUDE),
             data.get(ENTITY_LONGITUDE),
             data.get(ENTITY_BATTERY_LEVEL),
@@ -472,7 +473,7 @@ def _make_csv_handler(entry_id: str):
     """CarStatsViewer JSON POST handler."""
 
     async def handler(hass: HomeAssistant, webhook_id: str, request):
-        _LOGGER.debug(
+        _LOGGER_WEBHOOK.debug(
             "Location Receiver [%s]: CarStatsViewer webhook received — "
             "method=%s content_type=%s",
             entry_id,
@@ -482,7 +483,7 @@ def _make_csv_handler(entry_id: str):
         try:
             payload = await request.json()
         except Exception:
-            _LOGGER.error("Location Receiver: failed to parse CarStatsViewer JSON payload")
+            _LOGGER_WEBHOOK.error("Location Receiver: failed to parse CarStatsViewer JSON payload")
             return
         _LOGGER.debug(
             "Location Receiver [%s]: CarStatsViewer parsed — "
@@ -536,11 +537,13 @@ def _speed_ms_to_kmh(speed_ms: float | None) -> float | None:
     return round(speed_ms * 3.6, 2)
 
 
-def _parse_osmand_timestamp(raw) -> str | None:
+def _parse_timestamp(raw) -> str | None:
     if raw is None:
         return None
+
     if isinstance(raw, str) and "T" in raw:
         return raw
+
     try:
         ts = float(raw)
         if ts > 1e10:
@@ -577,7 +580,7 @@ def _validate_osmand_params(params) -> bool:
     if not has_position and not has_battery:
         _LOGGER.warning(
             "Location Receiver: OsmAnd params from '%s' rejected — "
-            "payload must contain at least lat/lon or a battery level value",
+            f"payload must contain at least {OSMAND_PARAM_LAT}/{OSMAND_PARAM_LON} or a battery level value",
             device_id,
         )
         return False
@@ -627,7 +630,7 @@ def _validate_osmand_json(payload: dict) -> bool:
     if not has_position and not has_battery:
         _LOGGER.warning(
             "Location Receiver: OsmAnd JSON from '%s' rejected — "
-            "payload must contain at least lat/lon or a battery level value",
+            f"payload must contain at least {OSMAND_JSON_LAT}/{OSMAND_JSON_LON} or a battery level value",
             device_id,
         )
         return False
@@ -650,12 +653,12 @@ def _validate_csv_payload(payload: dict) -> bool:
         _sf(payload.get(CSV_FIELD_LAT)) is not None
         and _sf(payload.get(CSV_FIELD_LON)) is not None
     )
-    has_battery = _sf(payload.get(CSV_FIELD_BATTERY_LEVEL)) is not None
+    has_battery = _sf(payload.get(CSV_FIELD_STATE_OF_CHARGE)) is not None
 
     if not has_position and not has_battery:
         _LOGGER.warning(
-            "Location Receiver: CarStatsViewer payload rejected — "
-            "payload must contain at least lat/lon or battery_level"
+            f"Location Receiver: CarStatsViewer payload rejected — "
+            f"payload must contain at least {CSV_FIELD_LAT}/{CSV_FIELD_LON} or {CSV_FIELD_STATE_OF_CHARGE}"
         )
         return False
 
@@ -718,9 +721,9 @@ def _parse_osmand_json(payload: dict) -> dict:
         ENTITY_ACTIVITY: activity.get(OSMAND_JSON_ACTIVITY_TYPE),
         ENTITY_ODOMETER: round(_sf(loc.get(OSMAND_JSON_ODOMETER)) / 1000, 1) if _sf(loc.get(OSMAND_JSON_ODOMETER)) is not None else None,  # convert m to km
         ENTITY_EVENT: loc.get(OSMAND_JSON_EVENT),
+        ENTITY_DEVICE_TIMESTAMP: _parse_timestamp(loc.get(OSMAND_JSON_TIMESTAMP)),
         ATTR_WEBHOOK_RECEIVED_AT: _now_iso(),
-        ATTR_DEVICE_TIMESTAMP: _parse_osmand_timestamp(loc.get(OSMAND_JSON_TIMESTAMP)),
-        ATTR_OSMAND_FORMAT: "json",
+        ATTR_FORMAT: "osmand_json",
     }
 
 
@@ -747,9 +750,9 @@ def _parse_osmand_params(params) -> dict:
         ENTITY_HEADING: heading,
         ENTITY_BATTERY_LEVEL: _sf(battery_raw),
         ENTITY_IS_CHARGING: _sb(charging_raw),
+        ENTITY_DEVICE_TIMESTAMP: _parse_timestamp(params.get(OSMAND_PARAM_TIMESTAMP)),
         ATTR_WEBHOOK_RECEIVED_AT: _now_iso(),
-        ATTR_DEVICE_TIMESTAMP: _parse_osmand_timestamp(params.get(OSMAND_PARAM_TIMESTAMP)),
-        ATTR_OSMAND_FORMAT: "params",
+        ATTR_FORMAT: "osmand_params",
     }
 
 
@@ -758,7 +761,9 @@ def _parse_csv_payload(payload: dict) -> dict:
 
     speed_ms = _sf(payload.get(CSV_FIELD_SPEED))
     power_w = _sf(payload.get(CSV_FIELD_POWER_mW)) /1000 if _sf(payload.get(CSV_FIELD_POWER_mW)) is not None else None
-    charge_power_connected = _sb(payload.get(CSV_FIELD_CHARGE_PORT));
+    charge_power_connected = _sb(payload.get(CSV_FIELD_CHARGE_PORT))
+    # check for charging by external connection not by regeneration
+    is_charging = (charge_power_connected and power_w < 0) if power_w is not None else None
 
     return {
         ENTITY_LATITUDE: _sf(payload.get(CSV_FIELD_LAT)),
@@ -768,14 +773,15 @@ def _parse_csv_payload(payload: dict) -> dict:
         ENTITY_ACCURACY: _sf(payload.get(CSV_FIELD_ACCURACY)),
         ENTITY_HEADING: _sf(payload.get(CSV_FIELD_HEADING)),
         ENTITY_BATTERY_LEVEL: round(_sf(payload.get(CSV_FIELD_STATE_OF_CHARGE)) * 100, 0) if _sf(payload.get(CSV_FIELD_STATE_OF_CHARGE)) is not None else None,
-        ENTITY_IS_CHARGING: (charge_power_connected and power_w < 0) if power_w is not None else None,
+        ENTITY_IS_CHARGING: is_charging,
         ENTITY_CHARGE_PORT_CONNECTED: charge_power_connected,
         ENTITY_IGNITION: payload.get(CSV_FIELD_IGNITION),
         ENTITY_GEAR: payload.get(CSV_FIELD_GEAR),
         ENTITY_POWER: power_w,  # convert mW to W
         ENTITY_TEMPERATURE: _sf(payload.get(CSV_FIELD_TEMPERATURE)),
+        ENTITY_DEVICE_TIMESTAMP: _parse_timestamp(payload.get(CSV_FIELD_TIMESTAMP)),
         ATTR_WEBHOOK_RECEIVED_AT: _now_iso(),
-        ATTR_DEVICE_TIMESTAMP: payload.get(CSV_FIELD_TIMESTAMP),
+        ATTR_FORMAT: "csv",
     }
 
 

@@ -56,6 +56,7 @@ ENTITY_ALTITUDE = "altitude"
 ENTITY_IS_CHARGING = "is_charging"
 ENTITY_DEVICE_TRACKER = "location"
 ENTITY_HEADING = "heading"
+ENTITY_DEVICE_TIMESTAMP = "device_timestamp"
 # Composed to build device tracker
 ENTITY_LATITUDE = "latitude"
 ENTITY_LONGITUDE = "longitude"
@@ -74,12 +75,11 @@ ENTITY_IGNITION = "ignition"
 ENTITY_POWER = "power"
 ENTITY_GEAR = "gear"
 
-# Attribute keys (will not became entities)
+# Attribute keys (will not became entities for now)
 ATTR_DEVICE_ID = "device_id"
-ATTR_DEVICE_TIMESTAMP = "device_timestamp"
 ATTR_WEBHOOK_RECEIVED_AT = "webhook_received_at"
-ATTR_OSMAND_FORMAT = "osmand_format"  # "json" or "params"
 ATTR_WEBHOOK_ID = "webhook_id"
+ATTR_FORMAT = "data_format"  # "osmand_json" or "osmand_params" or "csv"
 
 # OsmAnd query / form parameter names (GET or POST form-encoded)
 OSMAND_PARAM_DEVICE_ID = "id"

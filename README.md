@@ -32,7 +32,9 @@ Custom Home Assistant integration for receiving real-time GPS location data from
 
 - **Home Assistant ≥ 2026.3.0** — required for local brand icons (`brand/icon.png`) support.
 - **HACS ≥ 2.0.0** — required for installation via HACS.
-- A Home Assistant instance **accessible from the internet** so devices can reach the webhook URL. See the [HA remote access documentation](https://www.home-assistant.io/docs/configuration/remote/) for setup options (Nabu Casa, reverse proxy, etc.).
+- A Home Assistant instance **accessible from the internet** so devices can reach the webhook URL.
+    - See the [HA remote access documentation](https://www.home-assistant.io/docs/configuration/remote/) for setup options (Nabu Casa, reverse proxy, etc.).
+    - See Gemini comparison of options here https://share.google/aimode/9q6fCfDISgCZuUwzn
 - HTTPS is strongly recommended when the webhook URL is exposed to the internet — see the [Security Note](#security-note) section.
 
 ---
@@ -224,6 +226,7 @@ Expected fields:
 | Speed | `sensor` | km/h |
 | Altitude | `sensor` | m |
 | Charging | `binary_sensor` | — |
+| Last Reported Timestamp | `sensor` | timestamp |
 
 ### CarStatsViewer (CSV) Only
 
@@ -235,23 +238,6 @@ Expected fields:
 | Ignition State | `sensor` | — |
 | Charge Port Connected | `binary_sensor` | — |
 
-### Device Tracker Attributes
-
-| Attribute | Description |
-|-----------|-------------|
-| `device_id` | Identifier received from the device |
-| `heading` | Direction in degrees |
-| `accuracy` | GPS accuracy in meters |
-| `webhook_received_at` | UTC timestamp when HA received the request |
-| `device_timestamp` | Timestamp reported by the device |
-| `webhook_id` | Active webhook ID (for diagnostics) |
-| `osmand_format` | *(OsmAnd only)* `"json"` or `"params"` |
-| `is_moving` | *(OsmAnd JSON only)* Motion state |
-| `activity` | *(OsmAnd JSON only)* Activity type |
-| `odometer` | *(OsmAnd JSON only)* Device odometer |
-| `event` | *(OsmAnd JSON only)* Event type |
-
-Any additional fields not covered by dedicated entities are also exposed as attributes.
 
 ---
 

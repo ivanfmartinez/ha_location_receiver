@@ -12,6 +12,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    EntityCategory,
     PERCENTAGE,
     UnitOfPower,
     UnitOfSpeed,
@@ -22,8 +23,9 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.util import dt as dt_util
 
-from .const import ATTR_DEVICE_TIMESTAMP, ATTR_WEBHOOK_RECEIVED_AT, DEVICE_TYPE_CSV, DEVICE_TYPE_OSMAND, DOMAIN, ENTITY_ACTIVITY, ENTITY_ALTITUDE, ENTITY_BATTERY_LEVEL, ENTITY_GEAR, ENTITY_IGNITION, ENTITY_ODOMETER, ENTITY_POWER, ENTITY_SPEED, ENTITY_TEMPERATURE
+from .const import ATTR_FORMAT, ENTITY_DEVICE_TIMESTAMP, ATTR_WEBHOOK_RECEIVED_AT, DEVICE_TYPE_CSV, DEVICE_TYPE_OSMAND, DOMAIN, ENTITY_ACTIVITY, ENTITY_ALTITUDE, ENTITY_BATTERY_LEVEL, ENTITY_EVENT, ENTITY_GEAR, ENTITY_IGNITION, ENTITY_ODOMETER, ENTITY_POWER, ENTITY_SPEED, ENTITY_TEMPERATURE
 from .entity import GpsTrackerBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,6 +66,16 @@ SHARED_SENSORS: tuple[GpsTrackerSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:altimeter",
         entity_registry_enabled_default=False,
+    ),
+    GpsTrackerSensorEntityDescription(
+        key="last_reported_location_timestamp",
+        data_key=ENTITY_DEVICE_TIMESTAMP,
+        name="Last Reported Location Timestamp",
+        native_unit_of_measurement=None,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:clock-end",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
 )
 
@@ -118,6 +130,15 @@ OSMAND_SENSORS: tuple[GpsTrackerSensorEntityDescription, ...] = (
         name="Activity",
         icon="mdi:run",
         entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    GpsTrackerSensorEntityDescription(
+        key="event",
+        data_key=ENTITY_EVENT,
+        name="Event",
+        icon="mdi:bell",
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
 )
 
@@ -171,7 +192,31 @@ class GpsTrackerSensor(GpsTrackerBaseEntity, SensorEntity, RestoreEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return self._data.get(self.entity_description.data_key)
+        value = self._data.get(self.entity_description.data_key)
+
+        if self.entity_description.device_class == SensorDeviceClass.TIMESTAMP:
+            return dt_util.parse_datetime(value) if value else None
+
+        return value
+
+    @property
+    def extra_state_attributes(self) -> dict | None:
+        """Return attributes for entity."""
+        if not self._data:
+            return None
+
+        if self.entity_description.data_key != ENTITY_DEVICE_TIMESTAMP:
+            return None
+
+        attrs = {
+            ATTR_WEBHOOK_RECEIVED_AT: self._data.get(ATTR_WEBHOOK_RECEIVED_AT),
+            ATTR_FORMAT:  self._data.get(ATTR_FORMAT),
+            ENTITY_EVENT:  self._data.get(ENTITY_EVENT),
+        }
+
+        attributes = {k: v for k, v in attrs.items() if v is not None} or None
+        _LOGGER.debug(f"extra_state_attributes for {self.entity_description.name}: {attributes}")
+        return attributes
 
     async def async_added_to_hass(self) -> None:
         """Restore last known state then register live-update callback."""
@@ -232,20 +277,6 @@ class BatterySensor(GpsTrackerBaseEntity, SensorEntity, RestoreEntity):
         """Return the current battery level from live payload."""
         return self._data.get(self.entity_description.data_key)
 
-    @property
-    def extra_state_attributes(self) -> dict | None:
-        """Return webhook and device timestamps."""
-        _LOGGER.info(f"Battery extra_state_attributes called, payload: {self._data}")
-        if not self._data:
-            return None
-
-        attrs = {
-            ATTR_WEBHOOK_RECEIVED_AT: self._data.get(ATTR_WEBHOOK_RECEIVED_AT),
-            ATTR_DEVICE_TIMESTAMP:    self._data.get(ATTR_DEVICE_TIMESTAMP),
-        }
-        attributes = {k: v for k, v in attrs.items() if v is not None} or None
-        _LOGGER.debug(f"Final tracker attributes: {attributes}")
-        return attributes
 
     async def async_added_to_hass(self) -> None:
         """Restore last known state then register live-update callback."""
@@ -261,7 +292,7 @@ class BatterySensor(GpsTrackerBaseEntity, SensorEntity, RestoreEntity):
                     self._data = {
                         ENTITY_BATTERY_LEVEL: float(restored.state),
                         ATTR_WEBHOOK_RECEIVED_AT:   restored.attributes.get(ATTR_WEBHOOK_RECEIVED_AT),
-                        ATTR_DEVICE_TIMESTAMP: restored.attributes.get(ATTR_DEVICE_TIMESTAMP),
+                        ENTITY_DEVICE_TIMESTAMP: restored.attributes.get(ENTITY_DEVICE_TIMESTAMP),
                     }
                     _LOGGER.debug(
                         "Location Receiver [%s]: restored battery level %s%% from recorder",
