@@ -34,7 +34,7 @@ Custom Home Assistant integration for receiving real-time GPS location data from
 - **HACS ≥ 2.0.0** — required for installation via HACS.
 - A Home Assistant instance **accessible from the internet** so devices can reach the webhook URL.
     - See the [HA remote access documentation](https://www.home-assistant.io/docs/configuration/remote/) for setup options (Nabu Casa, reverse proxy, etc.).
-    - See Gemini comparison of options here [https://share.google/aimode/9q6fCfDISgCZuUwzn]
+    - See Gemini comparison of options here https://share.google/aimode/9q6fCfDISgCZuUwzn
 - HTTPS is strongly recommended when the webhook URL is exposed to the internet — see the [Security Note](#security-note) section.
 
 ---
