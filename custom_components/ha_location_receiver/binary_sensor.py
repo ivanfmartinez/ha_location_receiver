@@ -10,8 +10,9 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import DEVICE_TYPE_CSV, DEVICE_TYPE_OSMAND, ENTITY_CHARGE_PORT_CONNECTED, ENTITY_IS_CHARGING, ENTITY_IS_MOVING
 from .entity import GpsTrackerBaseEntity
@@ -81,7 +82,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class GpsTrackerBinarySensor(GpsTrackerBaseEntity, BinarySensorEntity):
+class GpsTrackerBinarySensor(GpsTrackerBaseEntity, BinarySensorEntity, RestoreEntity):
     """A binary sensor for Location Receiver."""
 
     entity_description: GpsTrackerBinarySensorEntityDescription
@@ -105,3 +106,27 @@ class GpsTrackerBinarySensor(GpsTrackerBaseEntity, BinarySensorEntity):
         if value is None:
             return None
         return bool(value)
+
+    async def async_added_to_hass(self) -> None:
+        """Restore last known state then register live-update callback."""
+        await super().async_added_to_hass()  # calls GpsTrackerBaseEntity.async_added_to_hass
+
+        # If no live data was loaded by the base class, try the recorder
+        if not self._data:
+            restored = await self.async_get_last_state()
+            if restored and restored.state not in (None, "unavailable", "unknown"):
+                try:
+                    # Seed _data with the restored value so available=True
+                    # and native_value returns the last known level immediately.
+                    self._data = {
+                        self.entity_description.data_key: restored.state,
+                    }
+
+                except (TypeError, ValueError):
+                    pass
+
+        # Register live-update dispatcher (overrides restored value on first webhook)
+        @callback
+        def handle_update(data: dict) -> None:
+            self._data = data
+            self.async_write_ha_state()
