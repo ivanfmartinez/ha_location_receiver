@@ -55,6 +55,17 @@ ENTITY_SPEED = "speed"
 ENTITY_ALTITUDE = "altitude"
 ENTITY_IS_CHARGING = "is_charging"
 ENTITY_DEVICE_TRACKER = "location"
+ENTITY_HEADING = "heading"
+# Composed to build device tracker
+ENTITY_LATITUDE = "latitude"
+ENTITY_LONGITUDE = "longitude"
+ENTITY_ACCURACY = "accuracy"
+
+# Entity keys - OsmAnd only
+ENTITY_IS_MOVING = "is_moving"
+ENTITY_ODOMETER = "odometer"
+ENTITY_EVENT = "event"
+ENTITY_ACTIVITY = "activity"
 
 # Entity keys - CSV only
 ENTITY_TEMPERATURE = "temperature"
@@ -62,6 +73,13 @@ ENTITY_CHARGE_PORT_CONNECTED = "charge_port_connected"
 ENTITY_IGNITION = "ignition"
 ENTITY_POWER = "power"
 ENTITY_GEAR = "gear"
+
+# Attribute keys (will not became entities)
+ATTR_DEVICE_ID = "device_id"
+ATTR_DEVICE_TIMESTAMP = "device_timestamp"
+ATTR_WEBHOOK_RECEIVED_AT = "webhook_received_at"
+ATTR_OSMAND_FORMAT = "osmand_format"  # "json" or "params"
+ATTR_WEBHOOK_ID = "webhook_id"
 
 # OsmAnd query / form parameter names (GET or POST form-encoded)
 OSMAND_PARAM_DEVICE_ID = "id"
@@ -99,17 +117,16 @@ OSMAND_JSON_ACTIVITY_TYPE = "type"
 
 # CarStatsViewer JSON field names
 CSV_FIELD_TIMESTAMP = "timestamp"
-CSV_FIELD_DEVICE_ID = "vehicle_id"
 CSV_FIELD_LAT = "lat"
 CSV_FIELD_LON = "lon"
 CSV_FIELD_ALT = "alt"
 CSV_FIELD_SPEED = "speed"
 CSV_FIELD_HEADING = "heading"
 CSV_FIELD_ACCURACY = "accuracy"
-CSV_FIELD_BATTERY_LEVEL = "battery_level"
-CSV_FIELD_BATTERY_POWER = "battery_power"
-CSV_FIELD_IS_CHARGING = "is_charging"
-CSV_FIELD_CHARGE_PORT = "charge_port_connected"
-CSV_FIELD_IGNITION = "ignition_state"
-CSV_FIELD_GEAR = "selected_gear"
-CSV_FIELD_TEMPERATURE = "ambient_temperature"
+CSV_FIELD_BATTERY_LEVEL = "batteryLevel"
+CSV_FIELD_POWER_mW = "power"
+CSV_FIELD_CHARGE_PORT = "chargePortConnected"
+CSV_FIELD_IGNITION = "ignitionState"
+CSV_FIELD_GEAR = "selectedGear"
+CSV_FIELD_STATE_OF_CHARGE = "stateOfCharge"
+CSV_FIELD_TEMPERATURE = "ambientTemperature"

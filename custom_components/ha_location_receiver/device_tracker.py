@@ -14,38 +14,10 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import CONF_DEVICE_TYPE, DEVICE_TYPES, DOMAIN
+from .const import ATTR_DEVICE_ID, ATTR_DEVICE_TIMESTAMP, ATTR_WEBHOOK_RECEIVED_AT, ATTR_WEBHOOK_ID, CONF_DEVICE_TYPE, DEVICE_TYPES, DOMAIN, ENTITY_ACCURACY, ENTITY_ALTITUDE, ENTITY_BATTERY_LEVEL, ENTITY_CHARGE_PORT_CONNECTED, ENTITY_GEAR, ENTITY_HEADING, ENTITY_IGNITION, ENTITY_IS_CHARGING, ENTITY_LATITUDE, ENTITY_LONGITUDE, ENTITY_ODOMETER, ENTITY_POWER, ENTITY_SPEED, ENTITY_TEMPERATURE
 from .entity import _get_active_webhook_id
 
 _LOGGER = logging.getLogger(__name__)
-
-# Keys that have dedicated sensor / binary_sensor entities.
-# Excluded from the generic extra-attributes dump to avoid duplication.
-_SENSOR_ENTITY_KEYS = frozenset({
-    "latitude",
-    "longitude",
-    "altitude",
-    "speed",
-    "battery_level",
-    "is_charging",
-    "charge_port_connected",
-    "ignition",
-    "gear",
-    "power",
-    "temperature",
-})
-
-# Payload keys already present as explicit named attributes — not repeated in extras.
-_EXPLICIT_ATTR_KEYS = frozenset({
-    "device_id",
-    "heading",
-    "accuracy",
-    "received_at",
-    "device_timestamp",
-    # lat/lon are exposed by TrackerEntity.state_attributes natively
-    "latitude",
-    "longitude",
-})
 
 
 async def async_setup_entry(
@@ -112,43 +84,6 @@ class LocationReceiverTracker(TrackerEntity, RestoreEntity):
         """Available as soon as any payload has been received."""
         return bool(self._payload)
 
-    # ── Attributes ───────────────────────────────────────────────────
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return all tracker attributes required by the specification.
-
-        Always included (once any data is received):
-            device_id, heading, accuracy, webhook_received_at,
-            device_timestamp, webhook_id
-
-        Plus any payload field that has no dedicated sensor entity.
-        """
-        if not self._payload:
-            return {}
-
-        attrs: dict[str, Any] = {
-            "device_id":           self._payload.get("device_id"),
-            "heading":             self._payload.get("heading"),
-            "accuracy":            self._payload.get("accuracy"),
-            "webhook_received_at": self._payload.get("received_at"),
-            "device_timestamp":    self._payload.get("device_timestamp"),
-            "webhook_id":          self._webhook_id,
-        }
-
-        # Append extra fields that have no dedicated entity
-        for key, value in self._payload.items():
-            if key not in _SENSOR_ENTITY_KEYS and key not in _EXPLICIT_ATTR_KEYS:
-                attrs[key] = value
-
-        # Required keys are always returned (even as None) so the user sees them.
-        # Extra keys are stripped if None to keep the UI clean.
-        required = {
-            "device_id", "heading", "accuracy",
-            "webhook_received_at", "device_timestamp", "webhook_id",
-        }
-        return {k: v for k, v in attrs.items() if k in required or v is not None}
-
     # ── Restore state ────────────────────────────────────────────────
 
     async def async_added_to_hass(self) -> None:
@@ -171,15 +106,15 @@ class LocationReceiverTracker(TrackerEntity, RestoreEntity):
         elif restored and restored.attributes:
             # Restore position from recorder so map shows last known location
             try:
-                lat = float(restored.attributes.get("latitude", 0) or 0)
-                lon = float(restored.attributes.get("longitude", 0) or 0)
-                acc = float(restored.attributes.get("gps_accuracy", 0) or 0)
-                if lat or lon:
+                lat = float(restored.attributes.get(ENTITY_LATITUDE, 0) or 0)
+                lon = float(restored.attributes.get(ENTITY_LONGITUDE, 0) or 0)
+                acc = float(restored.attributes.get(ENTITY_ACCURACY, 0) or 0)
+                if lat and lon:
                     self._attr_latitude = lat
                     self._attr_longitude = lon
                     self._attr_location_accuracy = acc
                     # Reconstruct a minimal payload so available returns True
-                    self._payload = {"_restored": True}
+                    self._payload = { "_restored": True }
             except (TypeError, ValueError):
                 pass
 
@@ -206,9 +141,9 @@ class LocationReceiverTracker(TrackerEntity, RestoreEntity):
         # mechanism expects. Setting these triggers cache invalidation so HA
         # writes the correct lat/lon to the state machine on the next
         # async_write_ha_state() call.
-        lat = data.get("latitude")
-        lon = data.get("longitude")
-        acc = data.get("accuracy")
+        lat = data.get(ENTITY_LATITUDE)
+        lon = data.get(ENTITY_LONGITUDE)
+        acc = data.get(ENTITY_ACCURACY)
 
         self._attr_latitude = float(lat) if lat is not None else None
         self._attr_longitude = float(lon) if lon is not None else None

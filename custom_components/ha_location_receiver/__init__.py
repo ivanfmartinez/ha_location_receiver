@@ -11,15 +11,37 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    ATTR_DEVICE_ID,
+    ATTR_DEVICE_TIMESTAMP,
+    ATTR_OSMAND_FORMAT,
+    ATTR_WEBHOOK_RECEIVED_AT,
     CONF_BOUND_DEVICE_ID,
     CONF_DEVICE_TYPE,
     CONF_GLOBAL_WEBHOOK_ID,
     CONF_GLOBAL_WEBHOOK_MANUAL,
     CONF_OSMAND_MODE,
     CONF_WEBHOOK_ID,
+    CSV_FIELD_POWER_mW,
     DEVICE_TYPE_CSV,
     DEVICE_TYPE_OSMAND,
     DOMAIN,
+    ENTITY_ACCURACY,
+    ENTITY_ACTIVITY,
+    ENTITY_ALTITUDE,
+    ENTITY_BATTERY_LEVEL,
+    ENTITY_CHARGE_PORT_CONNECTED,
+    ENTITY_EVENT,
+    ENTITY_GEAR,
+    ENTITY_HEADING,
+    ENTITY_IGNITION,
+    ENTITY_IS_CHARGING,
+    ENTITY_IS_MOVING,
+    ENTITY_LATITUDE,
+    ENTITY_LONGITUDE,
+    ENTITY_ODOMETER,
+    ENTITY_POWER,
+    ENTITY_SPEED,
+    ENTITY_TEMPERATURE,
     GLOBAL_STATE_KEY,
     GLOBAL_UNKNOWN_NOTIFICATIONS,
     GLOBAL_WEBHOOK_ID,
@@ -62,16 +84,14 @@ from .const import (
     # CarStatsViewer field names
     CSV_FIELD_ALT,
     CSV_FIELD_BATTERY_LEVEL,
-    CSV_FIELD_BATTERY_POWER,
     CSV_FIELD_CHARGE_PORT,
-    CSV_FIELD_DEVICE_ID,
     CSV_FIELD_GEAR,
     CSV_FIELD_HEADING,
     CSV_FIELD_IGNITION,
-    CSV_FIELD_IS_CHARGING,
     CSV_FIELD_LAT,
     CSV_FIELD_LON,
     CSV_FIELD_SPEED,
+    CSV_FIELD_STATE_OF_CHARGE,
     CSV_FIELD_TEMPERATURE,
     CSV_FIELD_TIMESTAMP,
     CSV_FIELD_ACCURACY,
@@ -350,13 +370,13 @@ async def _osmand_global_webhook_handler(
     _LOGGER.debug(
         "Location Receiver: global OsmAnd parsed — device_id=%s format=%s "
         "lat=%s lon=%s battery=%s",
-        data.get("device_id"),
-        data.get("osmand_format"),
-        data.get("latitude"),
-        data.get("longitude"),
-        data.get("battery_level"),
+        data.get(ATTR_DEVICE_ID),
+        data.get(ATTR_OSMAND_FORMAT),
+        data.get(ENTITY_LATITUDE),
+        data.get(ENTITY_LONGITUDE),
+        data.get(ENTITY_BATTERY_LEVEL),
     )
-    incoming_device_id = data.get("device_id", "")
+    incoming_device_id = data.get(ATTR_DEVICE_ID, "")
 
     # Find the entry whose bound_device_id matches
     target_entry_id: str | None = None
@@ -437,11 +457,11 @@ def _make_osmand_individual_handler(entry_id: str):
             "Location Receiver [%s]: OsmAnd individual parsed — device_id=%s "
             "format=%s lat=%s lon=%s battery=%s",
             entry_id,
-            data.get("device_id"),
-            data.get("osmand_format"),
-            data.get("latitude"),
-            data.get("longitude"),
-            data.get("battery_level"),
+            data.get(ATTR_DEVICE_ID),
+            data.get(ATTR_OSMAND_FORMAT),
+            data.get(ENTITY_LATITUDE),
+            data.get(ENTITY_LONGITUDE),
+            data.get(ENTITY_BATTERY_LEVEL),
         )
         _dispatch(hass, entry_id, data)
 
@@ -465,13 +485,12 @@ def _make_csv_handler(entry_id: str):
             _LOGGER.error("Location Receiver: failed to parse CarStatsViewer JSON payload")
             return
         _LOGGER.debug(
-            "Location Receiver [%s]: CarStatsViewer parsed — vehicle_id=%s "
+            "Location Receiver [%s]: CarStatsViewer parsed — "
             "lat=%s lon=%s battery=%s",
             entry_id,
-            payload.get("vehicle_id"),
-            payload.get("lat"),
-            payload.get("lon"),
-            payload.get("battery_level"),
+            payload.get(CSV_FIELD_LAT),
+            payload.get(CSV_FIELD_LON),
+            payload.get(CSV_FIELD_STATE_OF_CHARGE),
         )
         if not _validate_csv_payload(payload):
             return
@@ -686,22 +705,22 @@ def _parse_osmand_json(payload: dict) -> dict:
     batt_raw = _sf(battery.get(OSMAND_JSON_BATTERY_LEVEL))
 
     return {
-        "device_id": payload.get(OSMAND_JSON_DEVICE_ID),
-        "latitude": _sf(coords.get(OSMAND_JSON_LAT)),
-        "longitude": _sf(coords.get(OSMAND_JSON_LON)),
-        "altitude": _sf(coords.get(OSMAND_JSON_ALTITUDE)),
-        "speed": _speed_ms_to_kmh(speed_ms),
-        "accuracy": _sf(coords.get(OSMAND_JSON_ACCURACY)),
-        "heading": _sf(coords.get(OSMAND_JSON_HEADING)),
-        "battery_level": round(batt_raw * 100, 1) if batt_raw is not None else None,
-        "is_charging": _sb(battery.get(OSMAND_JSON_IS_CHARGING)),
-        "is_moving": _sb(loc.get(OSMAND_JSON_IS_MOVING)),
-        "activity": activity.get(OSMAND_JSON_ACTIVITY_TYPE),
-        "odometer": _sf(loc.get(OSMAND_JSON_ODOMETER)),
-        "event": loc.get(OSMAND_JSON_EVENT),
-        "received_at": _now_iso(),
-        "device_timestamp": _parse_osmand_timestamp(loc.get(OSMAND_JSON_TIMESTAMP)),
-        "osmand_format": "json",
+        ATTR_DEVICE_ID: payload.get(OSMAND_JSON_DEVICE_ID),
+        ENTITY_LATITUDE:  _sf(coords.get(OSMAND_JSON_LAT)),
+        ENTITY_LONGITUDE: _sf(coords.get(OSMAND_JSON_LON)),
+        ENTITY_ALTITUDE: _sf(coords.get(OSMAND_JSON_ALTITUDE)),
+        ENTITY_SPEED: _speed_ms_to_kmh(speed_ms),
+        ENTITY_ACCURACY: _sf(coords.get(OSMAND_JSON_ACCURACY)),
+        ENTITY_HEADING: _sf(coords.get(OSMAND_JSON_HEADING)),
+        ENTITY_BATTERY_LEVEL: round(batt_raw * 100, 1) if batt_raw is not None else None,
+        ENTITY_IS_CHARGING: _sb(battery.get(OSMAND_JSON_IS_CHARGING)),
+        ENTITY_IS_MOVING: _sb(loc.get(OSMAND_JSON_IS_MOVING)),
+        ENTITY_ACTIVITY: activity.get(OSMAND_JSON_ACTIVITY_TYPE),
+        ENTITY_ODOMETER: round(_sf(loc.get(OSMAND_JSON_ODOMETER)) / 1000, 1) if _sf(loc.get(OSMAND_JSON_ODOMETER)) is not None else None,  # convert m to km
+        ENTITY_EVENT: loc.get(OSMAND_JSON_EVENT),
+        ATTR_WEBHOOK_RECEIVED_AT: _now_iso(),
+        ATTR_DEVICE_TIMESTAMP: _parse_osmand_timestamp(loc.get(OSMAND_JSON_TIMESTAMP)),
+        ATTR_OSMAND_FORMAT: "json",
     }
 
 
@@ -712,49 +731,51 @@ def _parse_osmand_params(params) -> dict:
     heading = _sf(params.get(OSMAND_PARAM_HEADING)) or _sf(params.get(OSMAND_PARAM_HEADING_ALT))
     device_id = params.get(OSMAND_PARAM_DEVICE_ID) or params.get(OSMAND_PARAM_DEVICE_ID_ALT)
 
-    # Accept battery level under multiple param names: batt, battery, StateOfCharge
+    # Accept battery level under multiple param names: batt, battery
     battery_raw = (
-        params.get(OSMAND_PARAM_BATTERY)      # "batt"
-        or params.get("battery")
-        or params.get("StateOfCharge")
+        params.get(OSMAND_PARAM_BATTERY)
+        or params.get(OSMAND_JSON_BATTERY)
     )
 
     return {
-        "device_id": device_id,
-        "latitude": _sf(params.get(OSMAND_PARAM_LAT)),
-        "longitude": _sf(params.get(OSMAND_PARAM_LON)),
-        "altitude": _sf(params.get(OSMAND_PARAM_ALTITUDE)),
-        "speed": _speed_ms_to_kmh(speed_ms),
-        "accuracy": _sf(params.get(OSMAND_PARAM_ACCURACY)),
-        "heading": heading,
-        "battery_level": _sf(battery_raw),
-        "is_charging": charging_raw in ("true", "1", "yes"),
-        "received_at": _now_iso(),
-        "device_timestamp": _parse_osmand_timestamp(params.get(OSMAND_PARAM_TIMESTAMP)),
-        "osmand_format": "params",
+        ATTR_DEVICE_ID: device_id,
+        ENTITY_LATITUDE: _sf(params.get(OSMAND_PARAM_LAT)),
+        ENTITY_LONGITUDE: _sf(params.get(OSMAND_PARAM_LON)),
+        ENTITY_ALTITUDE: _sf(params.get(OSMAND_PARAM_ALTITUDE)),
+        ENTITY_SPEED: _speed_ms_to_kmh(speed_ms),
+        ENTITY_ACCURACY: _sf(params.get(OSMAND_PARAM_ACCURACY)),
+        ENTITY_HEADING: heading,
+        ENTITY_BATTERY_LEVEL: _sf(battery_raw),
+        ENTITY_IS_CHARGING: _sb(charging_raw),
+        ATTR_WEBHOOK_RECEIVED_AT: _now_iso(),
+        ATTR_DEVICE_TIMESTAMP: _parse_osmand_timestamp(params.get(OSMAND_PARAM_TIMESTAMP)),
+        ATTR_OSMAND_FORMAT: "params",
     }
 
 
 def _parse_csv_payload(payload: dict) -> dict:
     """Parse CarStatsViewer JSON payload."""
+
     speed_ms = _sf(payload.get(CSV_FIELD_SPEED))
+    power_w = _sf(payload.get(CSV_FIELD_POWER_mW)) /1000 if _sf(payload.get(CSV_FIELD_POWER_mW)) is not None else None
+    charge_power_connected = _sb(payload.get(CSV_FIELD_CHARGE_PORT));
+
     return {
-        "device_id": payload.get(CSV_FIELD_DEVICE_ID),
-        "latitude": _sf(payload.get(CSV_FIELD_LAT)),
-        "longitude": _sf(payload.get(CSV_FIELD_LON)),
-        "altitude": _sf(payload.get(CSV_FIELD_ALT)),
-        "speed": _speed_ms_to_kmh(speed_ms),
-        "accuracy": _sf(payload.get(CSV_FIELD_ACCURACY)),
-        "heading": _sf(payload.get(CSV_FIELD_HEADING)),
-        "battery_level": _sf(payload.get(CSV_FIELD_BATTERY_LEVEL)),
-        "is_charging": _sb(payload.get(CSV_FIELD_IS_CHARGING)),
-        "charge_port_connected": _sb(payload.get(CSV_FIELD_CHARGE_PORT)),
-        "ignition": payload.get(CSV_FIELD_IGNITION),
-        "gear": payload.get(CSV_FIELD_GEAR),
-        "power": _sf(payload.get(CSV_FIELD_BATTERY_POWER)),
-        "temperature": _sf(payload.get(CSV_FIELD_TEMPERATURE)),
-        "received_at": _now_iso(),
-        "device_timestamp": payload.get(CSV_FIELD_TIMESTAMP),
+        ENTITY_LATITUDE: _sf(payload.get(CSV_FIELD_LAT)),
+        ENTITY_LONGITUDE: _sf(payload.get(CSV_FIELD_LON)),
+        ENTITY_ALTITUDE: _sf(payload.get(CSV_FIELD_ALT)),
+        ENTITY_SPEED: _speed_ms_to_kmh(speed_ms),
+        ENTITY_ACCURACY: _sf(payload.get(CSV_FIELD_ACCURACY)),
+        ENTITY_HEADING: _sf(payload.get(CSV_FIELD_HEADING)),
+        ENTITY_BATTERY_LEVEL: round(_sf(payload.get(CSV_FIELD_STATE_OF_CHARGE)) * 100, 0) if _sf(payload.get(CSV_FIELD_STATE_OF_CHARGE)) is not None else None,
+        ENTITY_IS_CHARGING: (charge_power_connected and power_w < 0) if power_w is not None else None,
+        ENTITY_CHARGE_PORT_CONNECTED: charge_power_connected,
+        ENTITY_IGNITION: payload.get(CSV_FIELD_IGNITION),
+        ENTITY_GEAR: payload.get(CSV_FIELD_GEAR),
+        ENTITY_POWER: power_w,  # convert mW to W
+        ENTITY_TEMPERATURE: _sf(payload.get(CSV_FIELD_TEMPERATURE)),
+        ATTR_WEBHOOK_RECEIVED_AT: _now_iso(),
+        ATTR_DEVICE_TIMESTAMP: payload.get(CSV_FIELD_TIMESTAMP),
     }
 
 

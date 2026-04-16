@@ -13,7 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DEVICE_TYPE_CSV
+from .const import DEVICE_TYPE_CSV, DEVICE_TYPE_OSMAND, ENTITY_CHARGE_PORT_CONNECTED, ENTITY_IS_CHARGING, ENTITY_IS_MOVING
 from .entity import GpsTrackerBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class GpsTrackerBinarySensorEntityDescription(BinarySensorEntityDescription):
 SHARED_BINARY_SENSORS: tuple[GpsTrackerBinarySensorEntityDescription, ...] = (
     GpsTrackerBinarySensorEntityDescription(
         key="is_charging",
-        data_key="is_charging",
+        data_key=ENTITY_IS_CHARGING,
         name="Charging",
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
         icon="mdi:battery-charging",
@@ -39,10 +39,20 @@ SHARED_BINARY_SENSORS: tuple[GpsTrackerBinarySensorEntityDescription, ...] = (
 CSV_BINARY_SENSORS: tuple[GpsTrackerBinarySensorEntityDescription, ...] = (
     GpsTrackerBinarySensorEntityDescription(
         key="charge_port_connected",
-        data_key="charge_port_connected",
+        data_key=ENTITY_CHARGE_PORT_CONNECTED,
         name="Charge Port Connected",
         device_class=BinarySensorDeviceClass.PLUG,
         icon="mdi:ev-plug-type2",
+    ),
+)
+
+OSMAND_BINARY_SENSORS: tuple[GpsTrackerBinarySensorEntityDescription, ...] = (
+    GpsTrackerBinarySensorEntityDescription(
+        key="is_moving",
+        data_key=ENTITY_IS_MOVING,
+        name="Moving",
+        device_class=BinarySensorDeviceClass.MOTION,
+        icon="mdi:run",
     ),
 )
 
@@ -62,6 +72,11 @@ async def async_setup_entry(
     if device_type == DEVICE_TYPE_CSV:
         for description in CSV_BINARY_SENSORS:
             entities.append(GpsTrackerBinarySensor(hass, entry, description))
+
+    if device_type == DEVICE_TYPE_OSMAND:
+        for description in OSMAND_BINARY_SENSORS:
+            entities.append(GpsTrackerBinarySensor(hass, entry, description))
+
 
     async_add_entities(entities)
 
